@@ -5,9 +5,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 import datetime
 from .forms import RenewBookForm
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 
 
 def home(request):
@@ -48,7 +49,7 @@ class BookListView(generic.ListView):
         # В первую очередь получаем базовую реализацию контекста
         context = super(BookListView, self).get_context_data(**kwargs)
         # Добавляем новую переменную к контексту и инициализируем её некоторым значением
-        context['some_data'] = 'This is just some data'
+        context['book_list'] = Book.objects.all()
         return context
 
 
@@ -61,7 +62,7 @@ class AuthorListView(generic.ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return Author.objects.all()[:5]  # Получить 5 авторов
+        return Author.objects.all()
 
     def get_context_data(self, **kwargs):
         # В первую очередь получаем базовую реализацию контекста
@@ -126,3 +127,42 @@ class LoanedBooksAllListView(PermissionRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         return BookInstance.objects.filter(status__exact='o').order_by('due_back')
+
+
+class AuthorCreate(PermissionRequiredMixin, CreateView):
+    model = Author
+    fields = ['first_name', 'last_name', 'date_of_birth', 'date_of_death']
+    initial = {'date_of_death': '11/06/2020'}
+    permission_required = 'catalog.can_mark_returned'
+
+
+class AuthorUpdate(PermissionRequiredMixin, UpdateView):
+    model = Author
+    fields = '__all__'  # Not recommended (potential security issue if more fields added)
+    permission_required = 'catalog.can_mark_returned'
+
+
+class AuthorDelete(PermissionRequiredMixin, DeleteView):
+    model = Author
+    success_url = reverse_lazy('authors')
+    permission_required = 'catalog.can_mark_returned'
+
+
+# Classes created for the forms challenge
+class BookCreate(PermissionRequiredMixin, CreateView):
+    model = Book
+    fields = ['title', 'author', 'summary', 'isbn', 'genre', 'language']
+    permission_required = 'catalog.can_mark_returned'
+
+
+class BookUpdate(PermissionRequiredMixin, UpdateView):
+    model = Book
+    fields = ['title', 'author', 'summary', 'isbn', 'genre', 'language']
+    permission_required = 'catalog.can_mark_returned'
+
+
+class BookDelete(PermissionRequiredMixin, DeleteView):
+    model = Book
+    success_url = reverse_lazy('books')
+    permission_required = 'catalog.can_mark_returned'
+
