@@ -1,0 +1,29 @@
+version: '3'
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=db_library
+      - DB_USER=postgres
+      - DB_PASSWORD=123456
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: db_library
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+volumes:
+  postgres_data:
